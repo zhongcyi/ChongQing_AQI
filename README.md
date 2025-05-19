@@ -1,6 +1,6 @@
 拉取项目：
-git clone https://github.com/PKU-VCL-3DV/SLAM3R.git
-cd SLAM3R
+git clone https://github.com/zhongcyi/ChongQing_AQI.git  
+cd ChongQing_AQI  
 环境配置：
  conda create -n tf_gpu_2_10 python=3.10 -y  
  conda activate tf_gpu_2_10  
