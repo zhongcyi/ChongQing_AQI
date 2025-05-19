@@ -228,12 +228,10 @@ def rmse(y_true, y_pred):
     return tf.sqrt(tf.reduce_mean(tf.square(y_true - y_pred)))
 if __name__ == '__main__':
     for x in range(1,9):
-        # Train = np.load(rf"..\data_process\Data\Train_data_{x}.npy")
-        # Test_local = np.load(rf'..\data_process\Data\Test_local_{x}.npy')
-        # Test_station = np.load(rf'..\data_process\Data\Test_station_{x}.npy')
-        Train = np.load(f"Train_data_{x}.npy")
-        Test_local = np.load(f'Test_local_{x}.npy')
-        Test_station = np.load(f'Test_station_{x}.npy')
+        Train = np.load(rf"..\data_process\Data\Train_data_{x}.npy")
+        Test_local = np.load(rf'..\data_process\Data\Test_local_{x}.npy')
+        Test_station = np.load(rf'..\data_process\Data\Test_station_{x}.npy')
+
         num_total_stations = 32
         num_train_stations = 28
         num_test_stations = 4
