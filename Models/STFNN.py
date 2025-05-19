@@ -218,100 +218,101 @@ def evaluate_all(model, X_test, y_test, num_train_stations):
 
     return best_index, all_results[best_index], all_results
 if __name__ == '__main__':
-    x=1
-    Train = np.load(rf"..\data_process\Data\Train_data_{x}.npy")
-    Test_local = np.load(rf'..\data_process\Data\Test_local_{x}.npy')
-    Test_station = np.load(rf'..\data_process\Data\Test_station_{x}.npy')
-    num_total_stations = 32
-    num_train_stations = 28
-    num_test_stations = 4
-    train_stations = np.arange(num_train_stations)
-    test_stations = np.arange(num_test_stations)
+    for x in range(8):
+        Train = np.load(rf"..\data_process\Data\Train_data_{x}.npy")
+        Test_local = np.load(rf'..\data_process\Data\Test_local_{x}.npy')
+        Test_station = np.load(rf'..\data_process\Data\Test_station_{x}.npy')
+        num_total_stations = 32
+        num_train_stations = 28
+        num_test_stations = 4
+        train_stations = np.arange(num_train_stations)
+        test_stations = np.arange(num_test_stations)
 
 
-    def build_samples(data, stations, is_train=True):
-        X_list, y_list = [], []
-        for i in stations:
-            c_tar = tf.concat([
-                tf.expand_dims(data[:, i, :, 0], axis=-1),
-                data[:, i, :, 3:5],
-                data[:, i, :, 25:31],
-                tf.expand_dims(data[:, i, :, -1], axis=-1)
-            ], axis=-1)
-
-            if is_train:
-                station_mask = np.setdiff1d(stations, i)
-                c_scr = tf.concat([
-                    tf.expand_dims(data[:, station_mask, :, 0], axis=-1),
-                    tf.transpose(data[:, station_mask, :, 3:5], perm=[1, 0, 2, 3]),
-                    tf.transpose(data[:, station_mask, :, 25:31], perm=[1, 0, 2, 3]),
-                    tf.expand_dims(data[:, station_mask, :, -1], axis=-1)
-                ], axis=-1)
-                c_scr = tf.transpose(c_scr, perm=[1, 0, 2, 3])
-            else:
-                c_scr = tf.concat([
-                    tf.expand_dims(Test_station[:, :, :, 0], axis=-1),
-                    Test_station[:, :, :, 3:5],
-                    Test_station[:, :, :, 25:31],
-                    tf.expand_dims(Test_station[:, :, :, -1], axis=-1)
+        def build_samples(data, stations, is_train=True):
+            X_list, y_list = [], []
+            for i in stations:
+                c_tar = tf.concat([
+                    tf.expand_dims(data[:, i, :, 0], axis=-1),
+                    data[:, i, :, 3:5],
+                    data[:, i, :, 25:31],
+                    tf.expand_dims(data[:, i, :, -1], axis=-1)
                 ], axis=-1)
 
-            X_list.append({
-                'c_tar_train' if is_train else 'c_tar_test': c_tar,
-                'c_scr_train' if is_train else 'c_scr_test': c_scr
-            })
-            y = data[:, i, -1, -1]
-            y_list.append(y)
+                if is_train:
+                    station_mask = np.setdiff1d(stations, i)
+                    c_scr = tf.concat([
+                        tf.expand_dims(data[:, station_mask, :, 0], axis=-1),
+                        tf.transpose(data[:, station_mask, :, 3:5], perm=[1, 0, 2, 3]),
+                        tf.transpose(data[:, station_mask, :, 25:31], perm=[1, 0, 2, 3]),
+                        tf.expand_dims(data[:, station_mask, :, -1], axis=-1)
+                    ], axis=-1)
+                    c_scr = tf.transpose(c_scr, perm=[1, 0, 2, 3])
+                else:
+                    c_scr = tf.concat([
+                        tf.expand_dims(Test_station[:, :, :, 0], axis=-1),
+                        Test_station[:, :, :, 3:5],
+                        Test_station[:, :, :, 25:31],
+                        tf.expand_dims(Test_station[:, :, :, -1], axis=-1)
+                    ], axis=-1)
 
-        X = {key: np.array([d[key] for d in X_list]) for key in X_list[0]}
-        y = np.array(y_list)
-        for key in X:
-            X[key] = np.concatenate(X[key], axis=0)
-        y = np.concatenate(y, axis=0)
-        return X, y
+                X_list.append({
+                    'c_tar_train' if is_train else 'c_tar_test': c_tar,
+                    'c_scr_train' if is_train else 'c_scr_test': c_scr
+                })
+                y = data[:, i, -1, -1]
+                y_list.append(y)
+
+            X = {key: np.array([d[key] for d in X_list]) for key in X_list[0]}
+            y = np.array(y_list)
+            for key in X:
+                X[key] = np.concatenate(X[key], axis=0)
+            y = np.concatenate(y, axis=0)
+            return X, y
 
 
-    X_train, y_train = build_samples(Train, train_stations, is_train=True)
-    X_test, y_test = build_samples(Test_local, test_stations, is_train=False)
+        X_train, y_train = build_samples(Train, train_stations, is_train=True)
+        X_test, y_test = build_samples(Test_local, test_stations, is_train=False)
 
 
-    # 加载模型
-    model = STFNNWithMeteo(K=27, m=16, hidden_dim=64,num_meteo_features=6)
+        # 加载模型
+        model = STFNNWithMeteo(K=27, m=16, hidden_dim=64,num_meteo_features=6)
 
-    # 编译模型
-    model.compile(
-        optimizer=tf.keras.optimizers.Adam(learning_rate=0.00001),
-        loss=rmse,
-        metrics=['mae']
-    )
-    import os
-    # 构建模型
-    checkpoint_save_path = f"./checkpoint/STFNN_{x}.ckpt"
-    if os.path.exists(checkpoint_save_path + '.index'):
-        print("==========load the model==========")
-        model.load_weights(checkpoint_save_path)
-    checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
-        checkpoint_save_path,
-        # monitor="val_accuracy",#分类
-        monitor='val_loss',  # 回归
-        save_best_only=True,
-        save_weights_only=True,
-    )
-    early_stopping = tf.keras.callbacks.EarlyStopping(
-        monitor='val_loss',  # 监视验证集上的损失
-        patience=10,  # 如果连续5个epoch验证集上的损失没有改善，则停止训练
-        restore_best_weights=True  # 训练停止时，恢复最优权重
-    )
-    c_scr_coord = X_train['c_scr_train'][:,:,-1,:3]
-    c_scr_meo = X_train['c_scr_train'][:,:,:,3:-1]
-    c_tar_coord = X_train['c_tar_train'][:,-1,:3]
-    c_tar_meo = X_train['c_tar_train'][:,:,3:-1]
-    c_scr_y = X_train['c_scr_train'][:,:,-1,-1]
+        # 编译模型
+        model.compile(
+            optimizer=tf.keras.optimizers.Adam(learning_rate=0.00001),
+            loss=rmse,
+            metrics=['mae']
+        )
+        import os
+        # 构建模型
+        checkpoint_save_path = f"./checkpoint/STFNN_{x}.ckpt"
+        if os.path.exists(checkpoint_save_path + '.index'):
+            print("==========load the model==========")
+            model.load_weights(checkpoint_save_path)
+        checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
+            checkpoint_save_path,
+            # monitor="val_accuracy",#分类
+            monitor='val_loss',  # 回归
+            save_best_only=True,
+            save_weights_only=True,
+        )
+        early_stopping = tf.keras.callbacks.EarlyStopping(
+            monitor='val_loss',  # 监视验证集上的损失
+            patience=10,  # 如果连续5个epoch验证集上的损失没有改善，则停止训练
+            restore_best_weights=True  # 训练停止时，恢复最优权重
+        )
+        c_scr_coord = X_train['c_scr_train'][:,:,-1,:3]
+        c_scr_meo = X_train['c_scr_train'][:,:,:,3:-1]
+        c_tar_coord = X_train['c_tar_train'][:,-1,:3]
+        c_tar_meo = X_train['c_tar_train'][:,:,3:-1]
+        c_scr_y = X_train['c_scr_train'][:,:,-1,-1]
 
-    # 训练模型
-    # history = model.fit([c_scr_coord,c_scr_meo,c_tar_coord,c_tar_meo,c_scr_y],y_train,validation_split=0.14 , epochs=128,batch_size=128,
-    #                     callbacks=[checkpoint_callback,early_stopping])
-    best_index, best_result, all_results = evaluate_all(model, X_test, y_test, num_train_stations)
+        # 训练模型
+        history = model.fit([c_scr_coord,c_scr_meo,c_tar_coord,c_tar_meo,c_scr_y],y_train,validation_split=0.14 , epochs=128,batch_size=128,
+                            callbacks=[checkpoint_callback,early_stopping])
+        print(f'第{x}折模型的评估：')
+        best_index, best_result, all_results = evaluate_all(model, X_test, y_test, num_train_stations)
 
 
 
