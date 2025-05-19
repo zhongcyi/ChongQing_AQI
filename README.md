@@ -6,5 +6,10 @@ cd ChongQing_AQI
  conda activate tf_gpu_2_10  
  conda install -c conda-forge cudatoolkit=11.2 cudnn=8.1.0  
  pip install numpy==1.26.4
- python -m pip install "tensorflow==2.10"
+ python -m pip install "tensorflow==2.10"  
+ 运行流程：  
+ cd data_process  
+ python data_process.py  
+ cd ..\Models  
+ python [Models_name].py 
 
