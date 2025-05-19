@@ -134,7 +134,6 @@ class Model(tf.keras.models.Model):
         self.se1 = ChannelAttention()
         self.se2 = TimeDistributed(ChannelAttention())
         self.output_dense = Dense(1, activation='linear')
-        self.output_dense2 = Dense(1, activation='linear')
         self.local_encoder = Transformer.EncoderLayer(d_model=14, num_heads=2, hidden_units=32)
         self.stations_encoder = TimeDistributed(Transformer.EncoderLayer(d_model=14, num_heads=2, hidden_units=32))
         # 添加BatchNormalization
@@ -143,15 +142,10 @@ class Model(tf.keras.models.Model):
         self.flatten2 = TimeDistributed(Flatten())
         self.out = Dense(32, activation='gelu')
         self.encoder = Transformer.EncoderLayer(d_model=37,num_heads=1, hidden_units=128)
-        self.dropout = Dropout(0.1)
 
     def call(self, inputs):
         local_static, local_seq, stations_static, stations_seq, T= inputs['local_static'], inputs['local_seq'][..., :6], \
             inputs['stations_static'], inputs['stations_seq'],inputs['T']
-        # local_static = local_static[:,1,1,:]
-        # local_seq = local_seq[:,:,1,1,:]
-        # stations_static = stations_static[:,:,1,1,:]
-        # stations_seq = stations_seq[:,:,:,1,1,:]
         t = tf.expand_dims(T,axis=-1)
         p_T = []
         for period in [1.0, 7.0, 30.5, 365.0]:
@@ -159,11 +153,8 @@ class Model(tf.keras.models.Model):
             cos_term = tf.cos(2 * np.pi * t / (period*24))
             p_T.extend([sin_term, cos_term])
         p_T = tf.concat(p_T, axis=-1)
-        print('=======',p_T.shape)
         aqi = tf.expand_dims(stations_seq[:,:,-1,-1],axis=-1)
         stations_seq = stations_seq[..., :6]
-        print(local_seq.shape)
-
         local_seq = tf.concat([local_seq,tf.tile(tf.expand_dims(p_T,axis=1),[1,8,1])],axis=-1)
         local_encoder = self.local_encoder(local_seq)[:, -1, :]
         station_p_T = tf.expand_dims(tf.expand_dims(p_T,axis=1),axis=1)
@@ -237,10 +228,12 @@ def rmse(y_true, y_pred):
     return tf.sqrt(tf.reduce_mean(tf.square(y_true - y_pred)))
 if __name__ == '__main__':
     for x in range(1,9):
-
-        Train = np.load(rf"..\data_process\Data\Train_data_{x}.npy")
-        Test_local = np.load(rf'..\data_process\Data\Test_local_{x}.npy')
-        Test_station = np.load(rf'..\data_process\Data\Test_station_{x}.npy')
+        # Train = np.load(rf"..\data_process\Data\Train_data_{x}.npy")
+        # Test_local = np.load(rf'..\data_process\Data\Test_local_{x}.npy')
+        # Test_station = np.load(rf'..\data_process\Data\Test_station_{x}.npy')
+        Train = np.load(f"Train_data_{x}.npy")
+        Test_local = np.load(f'Test_local_{x}.npy')
+        Test_station = np.load(f'Test_station_{x}.npy')
         num_total_stations = 32
         num_train_stations = 28
         num_test_stations = 4
@@ -260,7 +253,7 @@ if __name__ == '__main__':
         )
 
         # 构建模型
-        checkpoint_save_path = f"./checkpoint1/my_model_{x}.ckpt"
+        checkpoint_save_path = f"./checkpoint/FsMoE-LSC_{x}.ckpt"
         if os.path.exists(checkpoint_save_path + '.index'):
             print("==========load the model==========")
             model.load_weights(checkpoint_save_path)
@@ -303,6 +296,7 @@ if __name__ == '__main__':
                 'T': X_test['T']
             }
             result = model.evaluate(x_test, y_test, verbose=0)  # 设为 0，避免冗长输出
+
             # 假设以第一个指标为评估标准（如 loss），若越小越好：
             if result[0] < best_score:
                 best_score = result[0]
