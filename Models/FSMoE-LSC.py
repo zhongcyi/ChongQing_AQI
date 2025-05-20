@@ -145,7 +145,7 @@ class Model(tf.keras.models.Model):
 
     def call(self, inputs):
         local_static, local_seq, stations_static, stations_seq, T= inputs['local_static'], inputs['local_seq'][..., :6], \
-            inputs['stations_static'], inputs['stations_seq'],inputs['T']
+            inputs['stations_static'], inputs['stations_seq'][...,:6],inputs['T']
         t = tf.expand_dims(T,axis=-1)
         p_T = []
         for period in [1.0, 7.0, 30.5, 365.0]:
@@ -154,7 +154,6 @@ class Model(tf.keras.models.Model):
             p_T.extend([sin_term, cos_term])
         p_T = tf.concat(p_T, axis=-1)
         aqi = tf.expand_dims(stations_seq[:,:,-1,-1],axis=-1)
-        stations_seq = stations_seq[..., :6]
         local_seq = tf.concat([local_seq,tf.tile(tf.expand_dims(p_T,axis=1),[1,8,1])],axis=-1)
         local_encoder = self.local_encoder(local_seq)[:, -1, :]
         station_p_T = tf.expand_dims(tf.expand_dims(p_T,axis=1),axis=1)

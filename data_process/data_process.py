@@ -20,7 +20,7 @@ def fill_nan_with_last_step(data, start_idx=25, end_idx=31):
 
     return data  # 可选返回，视是否想链式调用
 if __name__ == '__main__':
-    df=pd.read_csv('merged_data.csv')
+    df=pd.read_csv('merged_data_IPM25IAQI.csv')
     columns=df.columns
     nei_gird_size = 3 #网格领域大小
     array = df.to_numpy()#将df转化为numpy
