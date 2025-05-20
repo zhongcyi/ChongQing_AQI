@@ -218,10 +218,10 @@ def evaluate_all(model, X_test, y_test, num_train_stations):
 
     return best_index, all_results[best_index], all_results
 if __name__ == '__main__':
-    for x in range(8):
-        Train = np.load(rf"..\data_process\Data\Train_data_{x}.npy")
-        Test_local = np.load(rf'..\data_process\Data\Test_local_{x}.npy')
-        Test_station = np.load(rf'..\data_process\Data\Test_station_{x}.npy')
+    for x in range(1,9):
+        Train = np.load(rf"../data_process/Data/Train_data_{x}.npy")
+        Test_local = np.load(rf'../data_process/Data/Test_local_{x}.npy')
+        Test_station = np.load(rf'../data_process/Data/Test_station_{x}.npy')
         num_total_stations = 32
         num_train_stations = 28
         num_test_stations = 4

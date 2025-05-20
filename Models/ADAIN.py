@@ -39,8 +39,9 @@ class AttentionLayer(tf.keras.layers.Layer):
 
 
 # ADAIN模型 class实现
+
 class ADAINModel(tf.keras.Model):
-    def __init__(self, dropout_rate=0.3, l2_reg=1e-4, **kwargs):
+    def __init__(self, dropout_rate=0.1, l2_reg=1e-4, **kwargs):
         super(ADAINModel, self).__init__(**kwargs)
 
         self.dense_1 = Dense(200, activation='relu', kernel_regularizer=l2(l2_reg))
@@ -57,13 +58,14 @@ class ADAINModel(tf.keras.Model):
         self.dropout_3 = Dropout(dropout_rate)
 
         # Attention layer
-        self.attention_layer = AttentionLayer(hidden_dim=64, l2_reg=l2_reg)
+        self.attention_layer = AttentionLayer(hidden_dim=128, l2_reg=l2_reg)
 
         # Output layer
-        self.output_layer = Dense(1, activation='linear')
+        self.output_layer = Dense(1)
 
     def call(self, inputs):
         local_static, local_seq, stations_static, stations_seq = inputs['local_static'], inputs['local_seq'], inputs['stations_static'], inputs['stations_seq']
+        stations_seq = tf.concat([stations_seq[...,:6],tf.expand_dims(stations_seq[...,-1], axis=-1)],axis=-1)
         # 本地特征处理B,200
         local_fnn = self.dense_1(local_static)
         'B,300'
@@ -88,9 +90,12 @@ class ADAINModel(tf.keras.Model):
         merged = concatenate([local_fnn, local_lstm, weighted_stations],axis=-1)
         merged = self.dense_3(merged)
         merged = self.dropout_3(merged)
+
         # 输出层
         output = self.output_layer(merged)
+
         return output
+
 def build_dataset(data_local, data_station, station_indices, is_train=True):
     """
     构建数据集
@@ -141,9 +146,9 @@ def rmse(y_true, y_pred):
 if __name__ == '__main__':
     # 载入数据
     for x in range(1,29):
-        Train = np.load(rf"..\data_process\Data\Train_data_{x}.npy")
-        Test_local = np.load(rf'..\data_process\Data\Test_local_{x}.npy')
-        Test_station = np.load(rf'..\data_process\Data\Test_station_{x}.npy')
+        Train = np.load(rf"../data_process/Data/Train_data_{x}.npy")
+        Test_local = np.load(rf'../data_process/Data/Test_local_{x}.npy')
+        Test_station = np.load(rf'../data_process/Data/Test_station_{x}.npy')
         num_total_stations = 32
         num_train_stations = 28
         num_test_stations = 4

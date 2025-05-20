@@ -134,8 +134,8 @@ class Model(tf.keras.models.Model):
         self.se1 = ChannelAttention()
         self.se2 = TimeDistributed(ChannelAttention())
         self.output_dense = Dense(1, activation='linear')
-        self.local_encoder = Transformer.EncoderLayer(d_model=14, num_heads=2, hidden_units=32)
-        self.stations_encoder = TimeDistributed(Transformer.EncoderLayer(d_model=14, num_heads=2, hidden_units=32))
+        self.local_encoder = Transformer.EncoderLayer(d_model=14, num_heads=7, hidden_units=32)
+        self.stations_encoder = TimeDistributed(Transformer.EncoderLayer(d_model=14, num_heads=7, hidden_units=32))
         # 添加BatchNormalization
         self.moe = MoE(64, 27)
         self.flatten1 = Flatten()
@@ -228,9 +228,9 @@ def rmse(y_true, y_pred):
     return tf.sqrt(tf.reduce_mean(tf.square(y_true - y_pred)))
 if __name__ == '__main__':
     for x in range(1,9):
-        Train = np.load(rf"..\data_process\Data\Train_data_{x}.npy")
-        Test_local = np.load(rf'..\data_process\Data\Test_local_{x}.npy')
-        Test_station = np.load(rf'..\data_process\Data\Test_station_{x}.npy')
+        Train = np.load(rf"../data_process/Data/Train_data_{x}.npy")
+        Test_local = np.load(rf'../data_process/Data/Test_local_{x}.npy')
+        Test_station = np.load(rf'../data_process/Data/Test_station_{x}.npy')
 
         num_total_stations = 32
         num_train_stations = 28
@@ -245,7 +245,7 @@ if __name__ == '__main__':
         model = Model()
         # 编译模型
         model.compile(
-            optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001),
+            optimizer=tf.keras.optimizers.Adam(learning_rate=0.00001),
             loss=rmse,
             metrics=['mae']
         )
