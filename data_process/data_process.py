@@ -51,7 +51,6 @@ if __name__ == '__main__':
         #按gid进行分组
         array_grouped = array_flattened.groupby('gid', group_keys=True)
         # # 修改索引的名称
-        #
         train_station = []  # 存储训练站点的 DataFrame
         test_station = []   # 存储测试站点的 DataFrame
 
